@@ -5,7 +5,7 @@ a = Analysis(
     ['DB.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('settings.ini', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

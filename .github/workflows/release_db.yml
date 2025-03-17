@@ -3,7 +3,7 @@ name: Build and Release tag (db.py)
 on:
   push:
     tags:
-      - v*
+      - v_db*
 
 permissions:
   contents: write

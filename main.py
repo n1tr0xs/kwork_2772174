@@ -1,7 +1,9 @@
 import sys
+import csv
 from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton
 from PySide6.QtCore import Qt, QAbstractTableModel
+from datetime import datetime
 
 import DB
 from constants import *
@@ -39,11 +41,13 @@ class TableModel(QAbstractTableModel):
 
 class CompoundModel(TableModel):
     def __init__(self, data=None):
-        super().__init__(data=data, headers=['Bitter ID', 'Название'])
+        super().__init__(data=data)
+        self.headers=['Bitter ID', 'Название']
 
 class ReceptorModel(TableModel):
     def __init__(self, data=None):
-        super().__init__(data=data, headers=['Название'])
+        super().__init__(data=data)
+        self.headers=['Название']
 
 class Window(QMainWindow):
     def __init__(self):
@@ -51,6 +55,9 @@ class Window(QMainWindow):
 
         self.setWindowTitle(WINDOW_TITLE)
         self.setGeometry(100, 100, 600, 400)
+
+        # Data
+        self.model = TableModel()
 
         # Widgets
         self.edit = QtWidgets.QLineEdit('hTAS2R2')
@@ -82,12 +89,21 @@ class Window(QMainWindow):
         )
         
         for (model, func) in model_func:
-            self.data = func(prompt)
-            if self.data:
-                self.table.setModel(model(self.data))
+            if data := func(prompt):
+                self.model = model(data)
+                self.table.setModel(self.model)
+                break
 
     def export(self):
-        pass
+        now = datetime.now()
+        file_name = datetime.strftime(now, "%d %m %y %H %M %S") + '.csv'
+
+        with open(file_name, 'w', encoding='utf-8', newline='') as fout:
+            fieldnames = self.model.headers
+            writer = csv.writer(fout)
+            writer.writerow(self.model.headers)
+            for row in self.model.data_list:
+                writer.writerow(row)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])

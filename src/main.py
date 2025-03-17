@@ -1,13 +1,15 @@
 import sys
 import csv
 import configparser
-from PySide6 import QtCore, QtWidgets, QtGui
-from PySide6.QtWidgets import QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox
-from PySide6.QtCore import Qt, QAbstractTableModel, QSettings
+import locale
+from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox
+from PySide6.QtCore import Qt, QAbstractTableModel, QSettings, QByteArray
+from PySide6.QtGui import QCloseEvent
 from datetime import datetime
 
 import DB
 
+locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
 config = configparser.ConfigParser()
 config.read('settings.ini', encoding='UTF-8')
 
@@ -146,7 +148,7 @@ class Window(QMainWindow):
         if response == QMessageBox.Yes:
             DB.make_tables(DB_FILE_PATH)
 
-    def closeEvent(self, event: QtGui.QCloseEvent):
+    def closeEvent(self, event: QCloseEvent):
         self.save_settings()
         super().closeEvent(event)
 
@@ -160,10 +162,10 @@ class Window(QMainWindow):
         '''
         Restores last window geometry.
         '''
-        self.restoreGeometry(self.settings.value("geometry", type=QtCore.QByteArray))
+        self.restoreGeometry(self.settings.value("geometry", type=QByteArray))
 
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication([])
+    app = QApplication([])
     window = Window()
     sys.exit(app.exec())

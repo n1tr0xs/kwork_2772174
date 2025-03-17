@@ -41,7 +41,7 @@ jobs:
   release:    
     name: Publish release
     runs-on: ubuntu-22.04
-    needs: pyinstaller-build
+    needs: [pyinstaller-build-main, pyinstaller-build-db]
     steps:
       - name: Download builded app
         uses: actions/download-artifact@v4

@@ -36,11 +36,6 @@ jobs:
         with:
           name: ${{ env.app_name }}
           path: .
-      - name: Download builded db app
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.db_name }}
-          path: .
       - name: Archive builded app
         run: |
           zip -r "${GITHUB_REPOSITORY#*/}.zip" "${{ env.app_name }}"

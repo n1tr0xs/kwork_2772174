@@ -1,18 +1,15 @@
 import sys
 import csv
 import configparser
-import locale
 from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox
-from PySide6.QtCore import Qt, QAbstractTableModel, QSettings, QByteArray
+from PySide6.QtCore import Qt, QAbstractTableModel, QSettings, QByteArray, QTranslator, QLibraryInfo, QLocale
 from PySide6.QtGui import QCloseEvent
 from datetime import datetime
 
 import DB
 
-locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
 config = configparser.ConfigParser()
 config.read('settings.ini', encoding='UTF-8')
-
 WINDOW_TITLE = config['настройки']['WINDOW_TITLE']
 DB_FILE_PATH = config['настройки']['DB_FILE_PATH']
 
@@ -165,7 +162,20 @@ class Window(QMainWindow):
         self.restoreGeometry(self.settings.value("geometry", type=QByteArray))
 
 
-if __name__ == "__main__":
+def main():
     app = QApplication([])
-    window = Window()
+
+    # Translations
+    system_locale = QLocale.system().name()
+    QLocale.setDefault(QLocale(system_locale))
+    qt_translator = QTranslator()
+    qt_translation_path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
+    if qt_translator.load(f"qtbase_{system_locale}", qt_translation_path):
+        app.installTranslator(qt_translator)
+
+    Window()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()

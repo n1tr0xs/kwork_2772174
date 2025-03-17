@@ -1,4 +1,4 @@
-name: Build and Release tag
+name: Build and Release tag (main.py)
 
 on:
   push:

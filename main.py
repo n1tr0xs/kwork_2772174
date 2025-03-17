@@ -1,18 +1,27 @@
 import sys
 import csv
+import configparser
 from PySide6 import QtCore, QtWidgets, QtGui
-from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton
-from PySide6.QtCore import Qt, QAbstractTableModel
+from PySide6.QtWidgets import QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit
+from PySide6.QtCore import Qt, QAbstractTableModel, QSettings
 from datetime import datetime
 
 import DB
-from constants import *
+
+config = configparser.ConfigParser()
+config.read('settings.ini', encoding='UTF-8')
+
+WINDOW_TITLE = config['настройки']['WINDOW_TITLE']
+DB_FILE_PATH = config['настройки']['DB_FILE_PATH']
+
 
 class TableModel(QAbstractTableModel):
-    def __init__(self, data=None, headers=None):
+    model_name = None
+    headers = []
+
+    def __init__(self, data=None):
         super().__init__()
         self.data_list = data or []
-        self.headers = headers or []
 
     def rowCount(self, parent=None):
         return len(self.data_list)
@@ -39,74 +48,104 @@ class TableModel(QAbstractTableModel):
         self.data_list.append(new_data)
         self.endInsertRows()
 
+    def to_csv(self):
+        now = datetime.strftime(datetime.now(), "%d %m %y %H %M %S")
+        file_name = f'{self.model_name} {now}.csv'
+
+        with open(file_name, 'w', encoding='utf-8', newline='') as fout:
+            writer = csv.writer(fout)
+            writer.writerow(self.headers)
+            for row in self.data_list:
+                writer.writerow(row)
+
+
 class CompoundModel(TableModel):
+    model_name = 'compound'
+    headers = ['Bitter ID', 'Название']
+
     def __init__(self, data=None):
         super().__init__(data=data)
-        self.headers=['Bitter ID', 'Название']
+
 
 class ReceptorModel(TableModel):
+    model_name = 'receptor'
+    headers = ['Название']
+
     def __init__(self, data=None):
         super().__init__(data=data)
-        self.headers=['Название']
+
 
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.settings = QSettings('n1tr0xs', '')
         self.setWindowTitle(WINDOW_TITLE)
-        self.setGeometry(100, 100, 600, 400)
+
+        # Layout
+        layout = QVBoxLayout()
+
+        central_widget = QWidget()
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
 
         # Data
         self.model = TableModel()
 
         # Widgets
-        self.edit = QtWidgets.QLineEdit('hTAS2R2')
-        self.search_btn = QtWidgets.QPushButton("Поиск")
-        self.table = QTableView()
-        self.export_btn = QtWidgets.QPushButton("Экспорт в csv")
-        
-        # Signals
-        self.search_btn.clicked.connect(self.search)
-        self.export_btn.clicked.connect(self.export)
-
-        # Layout
-        layout = QtWidgets.QVBoxLayout()
+        self.edit = QLineEdit('')
         layout.addWidget(self.edit)
-        layout.addWidget(self.search_btn)
-        layout.addWidget(self.table)
-        layout.addWidget(self.export_btn)
 
-        central_widget = QtWidgets.QWidget()
-        central_widget.setLayout(layout)
-        self.setCentralWidget(central_widget)
+        self.button_search = QPushButton("Поиск")
+        self.button_search.clicked.connect(self.search)
+        layout.addWidget(self.button_search)
+
+        self.table = QTableView()
+        layout.addWidget(self.table)
+
+        self.button_export = QPushButton("Экспорт в csv")
+        self.button_export.clicked.connect(lambda x: self.model.to_csv())
+        layout.addWidget(self.button_export)
+
+        # Restoring window settings
+        self.resize(self.sizeHint())
+        self.restore_settings()
+        self.show()
 
     def search(self):
         db = DB.SQLite3DB(DB_FILE_PATH)
-        prompt = self.edit.text()
         model_func = (
             (CompoundModel, db.get_compounds),
             (ReceptorModel, db.get_receptors),
         )
-        
+
         for (model, func) in model_func:
-            if data := func(prompt):
+            if data := func(self.edit.text()):
                 self.model = model(data)
                 self.table.setModel(self.model)
                 break
 
-    def export(self):
-        now = datetime.now()
-        file_name = datetime.strftime(now, "%d %m %y %H %M %S") + '.csv'
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
 
-        with open(file_name, 'w', encoding='utf-8', newline='') as fout:
-            fieldnames = self.model.headers
-            writer = csv.writer(fout)
-            writer.writerow(self.model.headers)
-            for row in self.model.data_list:
-                writer.writerow(row)
+    def closeEvent(self, event: QtGui.QCloseEvent):
+        self.save_settings()
+        super().closeEvent(event)
+
+    def save_settings(self):
+        '''
+        Saves current window geometry.
+        '''
+        self.settings.setValue("geometry", self.saveGeometry())
+
+    def restore_settings(self):
+        '''
+        Restores last window geometry.
+        '''
+        self.restoreGeometry(self.settings.value("geometry", type=QtCore.QByteArray))
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
     window = Window()
-    window.show()
     sys.exit(app.exec())

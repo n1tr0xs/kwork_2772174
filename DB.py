@@ -1,7 +1,15 @@
 import csv
 import sqlite3
+import configparser
 
-from constants import *
+
+config = configparser.ConfigParser()
+config.read('settings.ini', encoding='UTF-8')
+
+RECEPTOR_FILE_PATH = config['настройки']['RECEPTOR_FILE_PATH']
+COMPOUND_FILE_PATH = config['настройки']['COMPOUND_FILE_PATH']
+LIGAND_FILE_PATH = config['настройки']['LIGAND_FILE_PATH']
+DB_FILE_PATH = config['настройки']['DB_FILE_PATH']
 
 
 class SQLite3DB:
@@ -15,7 +23,7 @@ class SQLite3DB:
         fields = ','.join(f"'{col}'" for col in sql_columns)
         self.cursor.execute(f"CREATE TABLE '{table_name}'({fields})")
 
-        with open(csv_path, 'r') as fin:
+        with open(csv_path, 'r', encoding='utf-8') as fin:
             reader = csv.DictReader(fin)
             to_db = [[row[col] for col in csv_columns] for row in reader]
         values = ', '.join('?' * len(sql_columns))

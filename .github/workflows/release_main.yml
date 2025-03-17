@@ -55,7 +55,7 @@ jobs:
           path: .
       - name: Archive builded app
         run: |
-          zip -r "${GITHUB_REPOSITORY#*/}.zip" "${{ env.app_name }} ${{ env.db_name }}"
+          zip -r "${GITHUB_REPOSITORY#*/}.zip" -i "${{ env.app_name }} ${{ env.db_name }}"
       - name: Create release
         run: |
           gh release create "${tag}" \

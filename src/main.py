@@ -2,7 +2,7 @@ import sys
 import csv
 import configparser
 from PySide6 import QtCore, QtWidgets, QtGui
-from PySide6.QtWidgets import QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit
+from PySide6.QtWidgets import QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox
 from PySide6.QtCore import Qt, QAbstractTableModel, QSettings
 from datetime import datetime
 
@@ -107,6 +107,10 @@ class Window(QMainWindow):
         self.button_export.clicked.connect(lambda x: self.model.to_csv())
         layout.addWidget(self.button_export)
 
+        self.button_update_db = QPushButton("Обновить базу данных")
+        self.button_update_db.clicked.connect(self.update_db)
+        layout.addWidget(self.button_update_db)
+
         # Restoring window settings
         self.resize(self.sizeHint())
         self.restore_settings()
@@ -127,6 +131,20 @@ class Window(QMainWindow):
 
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
+
+    def update_db(self):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Question)
+        msg_box.setWindowTitle("Подтверждение")
+        msg_box.setText("Обновление базы данных полностью пересоздаст её из csv файлов.")
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
+
+        # Execute the message box and check user response
+        response = msg_box.exec()
+
+        if response == QMessageBox.Yes:
+            DB.make_tables(DB_FILE_PATH)
 
     def closeEvent(self, event: QtGui.QCloseEvent):
         self.save_settings()

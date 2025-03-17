@@ -12,36 +12,24 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GITHUB_REPOSITORY: ${{ github.repository }}
   tag: ${{ github.ref_name }}
-  app_name: "main"
-  db_name: "db"
+  app_name: "kwork_2772174"
       
 jobs:
-  pyinstaller-build-main:
+  pyinstaller-build:
     name: Build main
     runs-on: windows-latest
     steps:
       - uses: sayyid5416/pyinstaller@v1
         with:
           python_ver: '3.11'
-          spec: 'src/main.spec'
+          spec: 'src/kwork_2772174.spec'
           requirements: 'requirements.txt'
           upload_exe_with_name: ${{ env.app_name }}
-  
-  pyinstaller-build-db:
-    name: Build db
-    runs-on: windows-latest
-    steps:
-      - uses: sayyid5416/pyinstaller@v1
-        with:
-          python_ver: '3.11'
-          spec: 'src/db.spec'
-          requirements: 'requirements.txt'
-          upload_exe_with_name: ${{ env.db_name }}
-          
+
   release:    
     name: Publish release
     runs-on: ubuntu-22.04
-    needs: [pyinstaller-build-main, pyinstaller-build-db]
+    needs: pyinstaller-build
     steps:
       - name: Download builded app
         uses: actions/download-artifact@v4
@@ -55,7 +43,7 @@ jobs:
           path: .
       - name: Archive builded app
         run: |
-          zip -r "${GITHUB_REPOSITORY#*/}.zip" -i "${{ env.app_name }} ${{ env.db_name }}"
+          zip -r "${GITHUB_REPOSITORY#*/}.zip" "${{ env.app_name }}"
       - name: Create release
         run: |
           gh release create "${tag}" \

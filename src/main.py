@@ -3,9 +3,9 @@ import sys
 import csv
 import configparser
 from datetime import datetime
-from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox, QDialog, QComboBox
+from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox, QDialog, QComboBox, QGridLayout, QLabel
 from PySide6.QtCore import Qt, QAbstractTableModel, QSettings, QByteArray, QTranslator, QLibraryInfo, QLocale
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtGui import QCloseEvent, QPixmap
 
 import DB
 
@@ -127,38 +127,72 @@ class SelectDialog(QDialog):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.model = TableModel()
+        self.init_ui()
 
+    def init_ui(self):
         self.settings = QSettings('n1tr0xs', WINDOW_TITLE)
         self.setWindowTitle(WINDOW_TITLE)
 
-        # Layout
-        layout = QVBoxLayout()
+        self.layout = QGridLayout()
 
-        central_widget = QWidget()
-        central_widget.setLayout(layout)
-        self.setCentralWidget(central_widget)
+        self.central_widget = QWidget()
+        self.central_widget.setLayout(self.layout)
+        self.setCentralWidget(self.central_widget)
 
-        # Data
-        self.model = TableModel()
+        # Label for App name
+        self.label = QLabel(WINDOW_TITLE)
+        self.label.setStyleSheet('''
+            background-color: #000000;
+            color: #FFFFFF;
+        ''')
+        self.label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(self.label, 0, 0, 1, 2)
 
-        # Widgets
+        # Edit for user input
         self.edit = QLineEdit()
-        layout.addWidget(self.edit)
+        self.edit.setStyleSheet('''
+            background-color: #000000;
+            color: #FFFFFF;
+        ''')
+        self.layout.addWidget(self.edit, 1, 0)
 
+        # Button to search
         self.button_search = QPushButton("Поиск")
+        self.button_search.setStyleSheet('''
+            background-color: #000000;
+            color: #FFFFFF;
+        ''')
         self.button_search.clicked.connect(self.search)
-        layout.addWidget(self.button_search)
+        self.layout.addWidget(self.button_search, 2, 0)
 
+        # Table for output
         self.table = QTableView()
-        layout.addWidget(self.table)
+        self.layout.addWidget(self.table, 3, 0)
 
+        # Button to export found data
         self.button_export = QPushButton("Экспорт в csv")
+        self.button_export.setStyleSheet('''
+            background-color: #000000;
+            color: #FFFFFF;
+        ''')
         self.button_export.clicked.connect(lambda x: self.model.to_csv())
-        layout.addWidget(self.button_export)
+        self.layout.addWidget(self.button_export, 4, 0)
 
+        # Button to update database
         self.button_update_db = QPushButton("Обновить базу данных")
+        self.button_update_db.setStyleSheet('''
+            background-color: #000000;
+            color: #FFFFFF;
+        ''')
         self.button_update_db.clicked.connect(self.update_db)
-        layout.addWidget(self.button_update_db)
+        self.layout.addWidget(self.button_update_db, 5, 0)
+
+        # Image label
+        self.image_label = QLabel(self)
+        self.image_label.setPixmap(QPixmap("background.png"))
+        self.image_label.setScaledContents(True)
+        self.layout.addWidget(self.image_label, 1, 1, 6, 1)
 
         # Restoring window settings
         self.resize(self.sizeHint())

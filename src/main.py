@@ -108,8 +108,8 @@ class SelectDialog(QDialog):
 
         # Widgets
         self.combo_box = QComboBox()
-        for option in enumerate(options):
-            self.combo_box.addItem(option)
+        for option in options:
+            self.combo_box.addItem(option, option)
         layout.addWidget(self.combo_box)
 
         self.button_OK = QPushButton("OK")

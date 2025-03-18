@@ -29,6 +29,12 @@ class SQLite3DB:
         values = ', '.join('?' * len(sql_columns))
         self.cursor.executemany(f"INSERT INTO '{table_name}' VALUES ({values});", to_db)
 
+        # Clean not h%
+        self.cursor.execute(f"""
+            DELETE FROM receptors
+            WHERE (name NOT LIKE 'h%') AND (display_name NOT LIKE 'h%')
+        """)
+
         self.connection.commit()
 
     def get_compounds_by_receptor(self, receptor: str):

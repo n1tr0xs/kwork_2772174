@@ -1,10 +1,11 @@
+import os
 import sys
 import csv
 import configparser
-from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox, QDialog, QRadioButton, QLabel, QComboBox
+from datetime import datetime
+from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox, QDialog, QComboBox
 from PySide6.QtCore import Qt, QAbstractTableModel, QSettings, QByteArray, QTranslator, QLibraryInfo, QLocale
 from PySide6.QtGui import QCloseEvent
-from datetime import datetime
 
 import DB
 
@@ -12,16 +13,29 @@ WINDOW_TITLE = 'Bitter DB'
 
 config = configparser.ConfigParser()
 config.read('settings.ini', encoding='UTF-8')
+EXPORT_FOLDER = config['настройки']['EXPORT_FOLDER']
 DB_FILE_PATH = config['настройки']['DB_FILE_PATH']
+
+
+def create_folder(path: str):
+    try:
+        os.makedirs(path, exist_ok=True)
+    except Exception as e:
+        print(f'Error: {e}')
 
 
 class TableModel(QAbstractTableModel):
     model_name = None
     headers = []
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, metadata=None):
         super().__init__()
         self.data_list = data or []
+        self.metadata = {
+            'Время и дата запроса': datetime.strftime(datetime.now(), "%d %m %y %H %M %S"),
+        }
+        if metadata:
+            self.metadata.update(metadata)
 
     def rowCount(self, parent=None):
         return len(self.data_list)
@@ -48,12 +62,20 @@ class TableModel(QAbstractTableModel):
         self.data_list.append(new_data)
         self.endInsertRows()
 
-    def to_csv(self):
-        now = datetime.strftime(datetime.now(), "%d %m %y %H %M %S")
-        file_name = f'{self.model_name} {now}.csv'
+    def get_file_name(self):
+        return datetime.strftime(datetime.now(), "%d %m %y %H %M %S")
 
-        with open(file_name, 'w', encoding='utf-8', newline='') as fout:
+    def to_csv(self):
+        create_folder(EXPORT_FOLDER)
+        file_name = self.get_file_name() + '.csv'
+        file_path = os.path.join(EXPORT_FOLDER, file_name)
+
+        with open(file_path, 'w', encoding='utf-8', newline='') as fout:
             writer = csv.writer(fout)
+
+            for key, value in self.metadata.items():
+                writer.writerow([f'# {key}: {value}'])
+
             writer.writerow(self.headers)
             for row in self.data_list:
                 writer.writerow(row)
@@ -63,39 +85,38 @@ class CompoundModel(TableModel):
     model_name = 'compound'
     headers = ['Bitter ID', 'Название вещества']
 
-    def __init__(self, data=None):
-        super().__init__(data=data)
+    def __init__(self, data=None, metadata=None):
+        super().__init__(data=data, metadata=metadata)
 
 
 class ReceptorModel(TableModel):
     model_name = 'receptor'
-    headers = ['Название рецептора', 'Bitter ID']
+    headers = ['Название рецептора']
 
-    def __init__(self, data=None):
-        super().__init__(data=data)
+    def __init__(self, data=None, metadata=None):
+        super().__init__(data=data, metadata=metadata)
 
 
-class SelectUserDialog(QDialog):
+class SelectDialog(QDialog):
     def __init__(self, title='Выбор', options=None):
         super().__init__()
         options = options or []
         self.setWindowTitle(title)
 
-        # Layout for dialog
+        # Layout
         layout = QVBoxLayout()
 
-        # Combo box to display the list of users
+        # Widgets
         self.combo_box = QComboBox()
-        for i, option in enumerate(options):
-            self.combo_box.addItem(option, option)
-
+        for option in enumerate(options):
+            self.combo_box.addItem(option)
         layout.addWidget(self.combo_box)
 
-        # OK button to confirm selection
         self.button_OK = QPushButton("OK")
         self.button_OK.clicked.connect(self.accept)
         layout.addWidget(self.button_OK)
 
+        # Window resize
         self.setLayout(layout)
         self.resize(self.sizeHint())
 
@@ -103,7 +124,7 @@ class SelectUserDialog(QDialog):
         return self.combo_box.currentData()
 
 
-class Window(QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
@@ -121,7 +142,7 @@ class Window(QMainWindow):
         self.model = TableModel()
 
         # Widgets
-        self.edit = QLineEdit('Quinine')
+        self.edit = QLineEdit()
         layout.addWidget(self.edit)
 
         self.button_search = QPushButton("Поиск")
@@ -145,46 +166,38 @@ class Window(QMainWindow):
         self.show()
 
     def search(self):
-        self.db = DB.SQLite3DB(DB_FILE_PATH)
+        db = DB.SQLite3DB(DB_FILE_PATH)
 
-        self.get_compounds()
-
-        del self.db
-        self.table.resizeColumnsToContents()
-        self.table.resizeRowsToContents()
-
-    def get_compounds(self):
         name = self.edit.text()
 
         # Get compounds with same name, but distinct id
-        compounds = self.db.get_compounds_by_name(name)
+        compounds = db.get_compounds_by_name(name)
         if compounds:
             # Select one of the compunds
-            dialog = SelectUserDialog(title=name, options=(c[0] for c in compounds))
+            dialog = SelectDialog(title=name, options=(c[0] for c in compounds))
             if dialog.exec() == QDialog.Accepted:
-                id_ = dialog.get_selected()
+                bitter_id = dialog.get_selected()
                 # Get receptors that sensed selected compound
-                data = self.db.get_receptors_by_compound(name, id_)
-                self.model = ReceptorModel(data)
+                data = db.get_receptors_by_compound(name, bitter_id)
+                self.model = ReceptorModel(data, metadata={'Bitter ID': bitter_id})
         else:
             # Get compounds sensed by receptor
-            data = self.db.get_compounds_by_receptor(name)
-            self.model = CompoundModel(data)
+            data = db.get_compounds_by_receptor(name)
+            self.model = CompoundModel(data, metadata={'Receptor': name})
 
         self.table.setModel(self.model)
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
 
     def update_db(self):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Question)
         msg_box.setWindowTitle("Подтверждение")
-        msg_box.setText("Обновление базы данных полностью пересоздаст её из csv файлов.")
+        msg_box.setText("Обновление базы данных полностью пересоздаст её из csv файлов, указанных в файле settings.ini.")
         msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         msg_box.setDefaultButton(QMessageBox.No)
 
-        # Execute the message box and check user response
-        response = msg_box.exec()
-
-        if response == QMessageBox.Yes:
+        if msg_box.exec() == QMessageBox.Yes:
             DB.make_tables(DB_FILE_PATH)
 
     def closeEvent(self, event: QCloseEvent):
@@ -215,7 +228,7 @@ def main():
     if qt_translator.load(f"qtbase_{system_locale}", qt_translation_path):
         app.installTranslator(qt_translator)
 
-    Window()
+    MainWindow()
     sys.exit(app.exec())
 
 

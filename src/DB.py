@@ -31,7 +31,7 @@ class SQLite3DB:
 
         self.connection.commit()
 
-    def get_compounds(self, receptor: str):
+    def get_compounds_by_receptor(self, receptor: str):
         self.cursor.execute(f"""
             SELECT DISTINCT c.id, c.name
             FROM receptors r
@@ -41,13 +41,21 @@ class SQLite3DB:
         """)
         return self.cursor.fetchall()
 
-    def get_receptors(self, compound: str):
+    def get_compounds_by_name(self, compound: str):
+        self.cursor.execute(f"""
+            SELECT DISTINCT c.id, c.name
+            FROM compounds c
+            WHERE c.name='{compound}'
+        """)
+        return self.cursor.fetchall()
+
+    def get_receptors_by_compound(self, compound: str, compound_id: int | str):
         self.cursor.execute(f"""
             SELECT DISTINCT r.name
             FROM compounds c
                 join ligands l on (c.id=l.compound_id)
                 join receptors r on (l.receptor_id=r.id)
-            WHERE c.name='{compound}'
+            WHERE c.name='{compound}' AND c.id='{compound_id}'
         """)
         return self.cursor.fetchall()
 
@@ -61,7 +69,3 @@ def make_tables(database: str):
     db.csv_to_table(COMPOUND_FILE_PATH, ('cID', 'cName', 'order'), 'compounds', ('id', 'name', 'ord'))
     db.csv_to_table(LIGAND_FILE_PATH, ('cID', 'rID'), 'ligands', ('compound_id', 'receptor_id'))
     db.close_connection()
-
-
-if __name__ == '__main__':
-    make_tables(DB_FILE_PATH)

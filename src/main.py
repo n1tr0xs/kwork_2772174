@@ -1,7 +1,7 @@
 import sys
 import csv
 import configparser
-from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox
+from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox, QDialog, QRadioButton, QLabel, QComboBox
 from PySide6.QtCore import Qt, QAbstractTableModel, QSettings, QByteArray, QTranslator, QLibraryInfo, QLocale
 from PySide6.QtGui import QCloseEvent
 from datetime import datetime
@@ -61,7 +61,7 @@ class TableModel(QAbstractTableModel):
 
 class CompoundModel(TableModel):
     model_name = 'compound'
-    headers = ['Bitter ID', 'Название']
+    headers = ['Bitter ID', 'Название вещества']
 
     def __init__(self, data=None):
         super().__init__(data=data)
@@ -69,10 +69,38 @@ class CompoundModel(TableModel):
 
 class ReceptorModel(TableModel):
     model_name = 'receptor'
-    headers = ['Название']
+    headers = ['Название рецептора', 'Bitter ID']
 
     def __init__(self, data=None):
         super().__init__(data=data)
+
+
+class SelectUserDialog(QDialog):
+    def __init__(self, title='Выбор', options=None):
+        super().__init__()
+        options = options or []
+        self.setWindowTitle(title)
+
+        # Layout for dialog
+        layout = QVBoxLayout()
+
+        # Combo box to display the list of users
+        self.combo_box = QComboBox()
+        for i, option in enumerate(options):
+            self.combo_box.addItem(option, option)
+
+        layout.addWidget(self.combo_box)
+
+        # OK button to confirm selection
+        self.button_OK = QPushButton("OK")
+        self.button_OK.clicked.connect(self.accept)
+        layout.addWidget(self.button_OK)
+
+        self.setLayout(layout)
+        self.resize(self.sizeHint())
+
+    def get_selected(self):
+        return self.combo_box.currentData()
 
 
 class Window(QMainWindow):
@@ -93,7 +121,7 @@ class Window(QMainWindow):
         self.model = TableModel()
 
         # Widgets
-        self.edit = QLineEdit('')
+        self.edit = QLineEdit('Quinine')
         layout.addWidget(self.edit)
 
         self.button_search = QPushButton("Поиск")
@@ -117,20 +145,33 @@ class Window(QMainWindow):
         self.show()
 
     def search(self):
-        db = DB.SQLite3DB(DB_FILE_PATH)
-        model_func = (
-            (CompoundModel, db.get_compounds),
-            (ReceptorModel, db.get_receptors),
-        )
+        self.db = DB.SQLite3DB(DB_FILE_PATH)
 
-        for (model, func) in model_func:
-            if data := func(self.edit.text()):
-                self.model = model(data)
-                self.table.setModel(self.model)
-                break
+        self.get_compounds()
 
+        del self.db
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
+
+    def get_compounds(self):
+        name = self.edit.text()
+
+        # Get compounds with same name, but distinct id
+        compounds = self.db.get_compounds_by_name(name)
+        if compounds:
+            # Select one of the compunds
+            dialog = SelectUserDialog(title=name, options=(c[0] for c in compounds))
+            if dialog.exec() == QDialog.Accepted:
+                id_ = dialog.get_selected()
+                # Get receptors that sensed selected compound
+                data = self.db.get_receptors_by_compound(name, id_)
+                self.model = ReceptorModel(data)
+        else:
+            # Get compounds sensed by receptor
+            data = self.db.get_compounds_by_receptor(name)
+            self.model = CompoundModel(data)
+
+        self.table.setModel(self.model)
 
     def update_db(self):
         msg_box = QMessageBox()

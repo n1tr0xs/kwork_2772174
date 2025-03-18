@@ -8,9 +8,10 @@ from datetime import datetime
 
 import DB
 
+WINDOW_TITLE = 'Bitter DB'
+
 config = configparser.ConfigParser()
 config.read('settings.ini', encoding='UTF-8')
-WINDOW_TITLE = config['настройки']['WINDOW_TITLE']
 DB_FILE_PATH = config['настройки']['DB_FILE_PATH']
 
 
@@ -78,7 +79,7 @@ class Window(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.settings = QSettings('n1tr0xs', '')
+        self.settings = QSettings('n1tr0xs', WINDOW_TITLE)
         self.setWindowTitle(WINDOW_TITLE)
 
         # Layout

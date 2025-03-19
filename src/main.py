@@ -4,12 +4,12 @@ import csv
 import configparser
 from datetime import datetime
 from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox, QDialog, QComboBox, QGridLayout, QLabel
-from PySide6.QtCore import Qt, QAbstractTableModel, QSettings, QByteArray, QTranslator, QLibraryInfo, QLocale
+from PySide6.QtCore import Qt, QAbstractTableModel, QSettings, QByteArray, QTranslator, QLibraryInfo, QLocale, QRect
 from PySide6.QtGui import QCloseEvent, QPixmap
 
 import DB
 
-WINDOW_TITLE = 'Bitter DB'
+WINDOW_TITLE = 'DNCBI.BITTER.LIB'
 
 config = configparser.ConfigParser()
 config.read('settings.ini', encoding='UTF-8')
@@ -83,7 +83,7 @@ class TableModel(QAbstractTableModel):
 
 class CompoundModel(TableModel):
     model_name = 'compound'
-    headers = ['Bitter ID', 'Название вещества']
+    headers = ['Bitter ID', "Название вещества"]
 
     def __init__(self, data=None, metadata=None):
         super().__init__(data=data, metadata=metadata)
@@ -98,10 +98,36 @@ class ReceptorModel(TableModel):
 
 
 class SelectDialog(QDialog):
+    CSS = """
+* {
+    color: #ffffff;
+    font-family: Arial;
+    font-size: 16px;
+    margin: 0;
+    padding: 0;
+}
+
+QDialog {
+    background: #000000;
+}
+
+QPushButton {
+    border-radius: 10px;
+}
+
+QPushButton,
+QComboBox,
+QComboBox{
+    background: #5a9bd5;
+    color: #ffffff;
+}
+"""
+
     def __init__(self, title='Выбор', options=None):
         super().__init__()
         options = options or []
         self.setWindowTitle(title)
+        self.setStyleSheet(self.CSS)
 
         layout = QVBoxLayout()
 
@@ -124,6 +150,30 @@ class SelectDialog(QDialog):
 
 
 class ConfirmDialog(QMessageBox):
+    CSS = """
+* {
+    color: #ffffff;
+    border-radius: 10px;
+    font-family: Arial;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+    padding: 0;
+}
+
+QMessageBox {
+    background: #000000;
+}
+
+QPushButton[text="&Yes"] {
+    background: green;
+}
+
+QPushButton[text="&No"] {
+    background: red;
+}
+"""
+
     def __init__(self, title, text, parent=None):
         super().__init__(
             QMessageBox.Question,
@@ -133,9 +183,69 @@ class ConfirmDialog(QMessageBox):
             parent=parent
         )
         self.setDefaultButton(QMessageBox.No)
+        self.setStyleSheet(self.CSS)
 
 
 class MainWindow(QMainWindow):
+    CSS = """
+* {
+    color: #ffffff;
+    border-radius: 10px;
+    font-family: Arial;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+    padding: 0;
+}
+
+MainWindow {
+    background: #000000;
+}
+
+#edit_prompt {
+    padding: 5px;
+}
+
+#edit_prompt,
+#button_export,
+#button_update_db,
+#label_result {
+    background: #5a9bd5;
+}
+
+#button_export:hover,
+#button_update_db:hover {
+    background: #8CB9E1;
+}
+
+#button_search {
+    background: #70ad46;
+}
+
+#button_search:hover {
+    background: #96C87D;
+}
+
+QHeaderView::section {
+    color: #000000;
+    text-align: center;
+    padding: 0;
+}
+
+#label_result {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+#table_result {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border: 5px solid #5a9bd5;
+    color: #000000;
+    text-align: left;
+}
+"""
+
     def __init__(self):
         super().__init__()
         self.model = TableModel()
@@ -148,71 +258,75 @@ class MainWindow(QMainWindow):
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
 
-        self.layout = QGridLayout(self.central_widget)
+        self.setStyleSheet(self.CSS)
 
         # Label for App name
-        self.label = QLabel(WINDOW_TITLE)
-        self.label.setStyleSheet('''
-            background-color: #000000;
-            color: #FFFFFF;
-        ''')
-        self.label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.label, 0, 0, 1, 2)
+        self.label_name = QLabel(self.central_widget)
+        self.label_name.setObjectName('label_name')
+        self.label_name.setText("ЭЛЕКТРОННАЯ БИБЛИОТЕКА ГОРЬКИХ ВЕЩЕСТВ \nИ РЕЦЕПТОРОВ hTAS2R")
+        self.label_name.setAlignment(Qt.AlignCenter)
 
         # Edit for user input
-        self.edit = QLineEdit()
-        self.edit.setStyleSheet('''
-            background-color: #000000;
-            color: #FFFFFF;
-        ''')
-        self.layout.addWidget(self.edit, 1, 0)
+        self.edit_prompt = QLineEdit(self.central_widget)
+        # Quinine
+        # hTas2r2
+        self.edit_prompt.setObjectName('edit_prompt')
 
         # Button to search
-        self.button_search = QPushButton("Поиск")
-        self.button_search.setStyleSheet('''
-            background-color: #000000;
-            color: #FFFFFF;
-        ''')
+        self.button_search = QPushButton(self.central_widget)
+        self.button_search.setObjectName('button_search')
+        self.button_search.setText("Найти")
         self.button_search.clicked.connect(self.search)
-        self.layout.addWidget(self.button_search, 2, 0)
 
         # Table for output
-        self.table = QTableView()
-        self.layout.addWidget(self.table, 3, 0)
+        self.label_result = QLabel(self.central_widget)
+        self.label_result.setObjectName('label_result')
+        self.label_result.setText("Результат")
+        self.label_result.setAlignment(Qt.AlignCenter)
+
+        self.table_result = QTableView(self.central_widget)
+        self.table_result.setObjectName('table_result')
 
         # Button to export found data
-        self.button_export = QPushButton("Экспорт в csv")
-        self.button_export.setStyleSheet('''
-            background-color: #000000;
-            color: #FFFFFF;
-        ''')
+        self.button_export = QPushButton(self.central_widget)
+        self.button_export.setObjectName('button_export')
+        self.button_export.setText("Экспорт в csv")
         self.button_export.clicked.connect(lambda x: self.model.to_csv())
-        self.layout.addWidget(self.button_export, 4, 0)
 
         # Button to update database
-        self.button_update_db = QPushButton("Обновить базу данных")
-        self.button_update_db.setStyleSheet('''
-            background-color: #000000;
-            color: #FFFFFF;
-        ''')
+        self.button_update_db = QPushButton(self.central_widget)
+        self.button_update_db.setObjectName('button_update_db')
+        self.button_update_db.setText("Обновить базу данных")
         self.button_update_db.clicked.connect(self.update_db)
-        self.layout.addWidget(self.button_update_db, 5, 0)
 
         # Image label
-        self.image_label = QLabel(self)
-        self.image_label.setPixmap(QPixmap("background.png"))
-        self.image_label.setScaledContents(True)
-        self.layout.addWidget(self.image_label, 1, 1, 6, 1)
+        self.label_logo = QLabel(self.central_widget)
+        self.label_logo.setObjectName('label_logo')
+        self.label_logo.setPixmap(QPixmap("background.png"))
+        self.label_logo.setScaledContents(True)
+
+        # Layout
+        self.label_logo.setGeometry(0, 0, 280, 300)
+        self.label_logo.setObjectName('label_logo')
+        self.label_name.setGeometry(365, 110, 575, 75)
+
+        self.edit_prompt.setGeometry(300, 330, 650, 70)
+        self.button_search.setGeometry(300 + 650 - 125, 330 + (70 - 60) // 2, 120, 60)
+
+        self.button_export.setGeometry(515, 410, 230, 60)
+        self.button_update_db.setGeometry(50, 650, 265, 35)
+        self.label_result.setGeometry(1000, 10, 355, 60)
+        self.table_result.setGeometry(1000, 65, 355, 625)
 
         # Restoring window settings
-        self.resize(self.sizeHint())
+        self.setFixedSize(1400, 735)
         self.restore_settings()
         self.show()
 
     def search(self):
         db = DB.SQLite3DB(DB_FILE_PATH)
 
-        name = self.edit.text()
+        name = self.edit_prompt.text()
 
         # Get compounds with same name, but distinct id
         compounds = db.get_compounds_by_name(name)
@@ -229,9 +343,9 @@ class MainWindow(QMainWindow):
             data = db.get_compounds_by_receptor(name)
             self.model = CompoundModel(data, metadata={'Receptor': name})
 
-        self.table.setModel(self.model)
-        self.table.resizeColumnsToContents()
-        self.table.resizeRowsToContents()
+        self.table_result.setModel(self.model)
+        self.table_result.resizeColumnsToContents()
+        self.table_result.resizeRowsToContents()
 
     def update_db(self):
         dialog = ConfirmDialog(
@@ -265,10 +379,10 @@ def main():
     # Translations
     system_locale = QLocale.system().name()
     QLocale.setDefault(QLocale(system_locale))
-    qt_translator = QTranslator()
-    qt_translation_path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
-    if qt_translator.load(f"qtbase_{system_locale}", qt_translation_path):
-        app.installTranslator(qt_translator)
+    # qt_translator = QTranslator()
+    # qt_translation_path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
+    # if qt_translator.load(f"qtbase_{system_locale}", qt_translation_path):
+    #     app.installTranslator(qt_translator)
 
     MainWindow()
     sys.exit(app.exec())

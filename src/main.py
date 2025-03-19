@@ -205,27 +205,29 @@ QPushButton {
     width: 45px;
     height: 32px;
 }
-
-QPushButton[text="&Yes"] {
+"""
+    BUTTON_YES_CSS = """
+QPushButton {
     background: #70ad46;
 }
 
-QPushButton[text="&Yes"]:hover {
+QPushButton:hover {
     background-color: #96C87D;
 }
 
-QPushButton[text="&Yes"]:pressed {
+QPushButton:pressed {
     background-color: #64A045;
 }
-
-QPushButton[text="&No"] {
+"""
+    BUTTON_NO_CSS = """
+QPushButton {
     background: #ff0000;
 }
 
-QPushButton[text="&No"]:hover {
+QPushButton:hover {
     background-color: #e74c3c;
 }
-QPushButton[text="&No"]:pressed {
+QPushButton:pressed {
     background-color: #a93226;
 }
 """
@@ -238,8 +240,14 @@ QPushButton[text="&No"]:pressed {
             buttons=QMessageBox.Yes | QMessageBox.No,
             parent=parent
         )
-        self.setDefaultButton(QMessageBox.No)
+        yes_button = self.button(QMessageBox.Yes)
+        no_button = self.button(QMessageBox.No)
+
         self.setStyleSheet(self.CSS)
+        yes_button.setStyleSheet(self.BUTTON_YES_CSS)
+        no_button.setStyleSheet(self.BUTTON_NO_CSS)
+
+        self.setDefaultButton(no_button)
         self.setWindowIcon(QIcon("icon.ico"))
 
 

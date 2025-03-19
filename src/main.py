@@ -3,11 +3,38 @@ import sys
 import csv
 import configparser
 from datetime import datetime
-from PySide6.QtWidgets import QApplication, QMainWindow, QTableView, QVBoxLayout, QWidget, QPushButton, QLineEdit, QMessageBox, QDialog, QComboBox, QGridLayout, QLabel
-from PySide6.QtCore import Qt, QAbstractTableModel, QSettings, QByteArray, QTranslator, QLibraryInfo, QLocale, QRect
-from PySide6.QtGui import QCloseEvent, QPixmap
+
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QMessageBox, QDialog, QWidget,
+    QVBoxLayout,
+    QTableView, QPushButton, QLineEdit, QComboBox, QLabel
+)
+from PySide6.QtCore import (
+    Qt, QSettings, QByteArray, QTranslator, QLibraryInfo, QLocale,
+    QAbstractTableModel,
+)
+from PySide6.QtGui import QCloseEvent, QPixmap, QIcon
 
 import DB
+
+"""
+CSS COLORS
+
+blue:
+#5a9bd5
+#8CB9E1
+#4B91CD
+
+green:
+#70ad46
+#96C87D
+#64A045
+
+red:
+#ff0000
+#e74c3c
+#a93226
+"""
 
 WINDOW_TITLE = 'DNCBI.BITTER.LIB'
 
@@ -103,35 +130,48 @@ class SelectDialog(QDialog):
     color: #ffffff;
     font-family: Arial;
     font-size: 16px;
-    margin: 0;
-    padding: 0;
 }
 
 QDialog {
     background: #000000;
 }
 
-QPushButton {
-    border-radius: 10px;
-}
-
 QPushButton,
 QComboBox,
-QComboBox{
-    background: #5a9bd5;
-    color: #ffffff;
+QComboBox QAbstractItemView {
+    font-size: 14px;
+    border-radius: 5px;
+    background: #69B0E4;
+    padding: 5px;
+}
+
+QAbstractItemView::item:hover {
+    background-color: #4B91CD;
+    border: 0;
+}
+
+QPushButton:hover {
+    background: #8CB9E1;
+}
+QPushButton:pressed {
+    background: #4B91CD;
 }
 """
 
-    def __init__(self, title='Выбор', options=None):
+    def __init__(self, title='Выбор', text='', options=None):
         super().__init__()
         options = options or []
         self.setWindowTitle(title)
         self.setStyleSheet(self.CSS)
+        self.setWindowIcon(QIcon("icon.ico"))
 
         layout = QVBoxLayout()
+        self.setLayout(layout)
 
         # Widgets
+        self.label = QLabel(text)
+        layout.addWidget(self.label)
+
         self.combo_box = QComboBox()
         for option in options:
             self.combo_box.addItem(option, option)
@@ -142,7 +182,6 @@ QComboBox{
         layout.addWidget(self.button_OK)
 
         # Window resize
-        self.setLayout(layout)
         self.resize(self.sizeHint())
 
     def get_selected(self):
@@ -155,22 +194,39 @@ class ConfirmDialog(QMessageBox):
     color: #ffffff;
     border-radius: 10px;
     font-family: Arial;
-    font-size: 20px;
-    font-weight: bold;
-    margin: 0;
-    padding: 0;
+    font-size: 16px;
 }
 
 QMessageBox {
     background: #000000;
 }
 
+QPushButton {
+    width: 45px;
+    height: 32px;
+}
+
 QPushButton[text="&Yes"] {
-    background: green;
+    background: #70ad46;
+}
+
+QPushButton[text="&Yes"]:hover {
+    background-color: #96C87D;
+}
+
+QPushButton[text="&Yes"]:pressed {
+    background-color: #64A045;
 }
 
 QPushButton[text="&No"] {
-    background: red;
+    background: #ff0000;
+}
+
+QPushButton[text="&No"]:hover {
+    background-color: #e74c3c;
+}
+QPushButton[text="&No"]:pressed {
+    background-color: #a93226;
 }
 """
 
@@ -184,6 +240,7 @@ QPushButton[text="&No"] {
         )
         self.setDefaultButton(QMessageBox.No)
         self.setStyleSheet(self.CSS)
+        self.setWindowIcon(QIcon("icon.ico"))
 
 
 class MainWindow(QMainWindow):
@@ -193,9 +250,14 @@ class MainWindow(QMainWindow):
     border-radius: 10px;
     font-family: Arial;
     font-size: 20px;
-    font-weight: bold;
-    margin: 0;
-    padding: 0;
+}
+
+QMenu {
+    background-color: #000000;
+}
+
+QMenu:item:selected {
+    background-color: #8CB9E1;
 }
 
 MainWindow {
@@ -207,23 +269,32 @@ MainWindow {
 }
 
 #edit_prompt,
-#button_export,
-#button_update_db,
+QPushButton#button_export,
+QPushButton#button_update_db,
 #label_result {
     background: #5a9bd5;
 }
 
-#button_export:hover,
-#button_update_db:hover {
+QPushButton#button_export:hover,
+QPushButton#button_update_db:hover {
     background: #8CB9E1;
 }
 
-#button_search {
+QPushButton#button_export:pressed,
+QPushButton#button_update_db:pressed {
+    background: #4B91CD;
+}
+
+QPushButton#button_search {
     background: #70ad46;
 }
 
-#button_search:hover {
+QPushButton#button_search:hover {
     background: #96C87D;
+}
+
+QPushButton#button_search:pressed {
+    background: #64A045;
 }
 
 QHeaderView::section {
@@ -254,11 +325,11 @@ QHeaderView::section {
     def init_ui(self):
         self.settings = QSettings('n1tr0xs', WINDOW_TITLE)
         self.setWindowTitle(WINDOW_TITLE)
+        self.setWindowIcon(QIcon("icon.ico"))
+        self.setStyleSheet(self.CSS)
 
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
-
-        self.setStyleSheet(self.CSS)
 
         # Label for App name
         self.label_name = QLabel(self.central_widget)
@@ -268,8 +339,6 @@ QHeaderView::section {
 
         # Edit for user input
         self.edit_prompt = QLineEdit(self.central_widget)
-        # Quinine
-        # hTas2r2
         self.edit_prompt.setObjectName('edit_prompt')
 
         # Button to search
@@ -306,20 +375,17 @@ QHeaderView::section {
         self.label_logo.setScaledContents(True)
 
         # Layout
+        self.setFixedSize(1400, 735)
         self.label_logo.setGeometry(0, 0, 280, 300)
-        self.label_logo.setObjectName('label_logo')
         self.label_name.setGeometry(365, 110, 575, 75)
-
         self.edit_prompt.setGeometry(300, 330, 650, 70)
-        self.button_search.setGeometry(300 + 650 - 125, 330 + (70 - 60) // 2, 120, 60)
-
+        self.button_search.setGeometry(825, 335, 120, 60)
         self.button_export.setGeometry(515, 410, 230, 60)
         self.button_update_db.setGeometry(50, 650, 265, 35)
         self.label_result.setGeometry(1000, 10, 355, 60)
         self.table_result.setGeometry(1000, 65, 355, 625)
 
         # Restoring window settings
-        self.setFixedSize(1400, 735)
         self.restore_settings()
         self.show()
 
@@ -332,7 +398,7 @@ QHeaderView::section {
         compounds = db.get_compounds_by_name(name)
         if compounds:
             # Select one of the compunds
-            dialog = SelectDialog(title=name, options=(c[0] for c in compounds))
+            dialog = SelectDialog(title=name, text='Выберите Bitter ID', options=(c[0] for c in compounds))
             if dialog.exec() == QDialog.Accepted:
                 bitter_id = dialog.get_selected()
                 # Get receptors that sensed selected compound
@@ -379,10 +445,10 @@ def main():
     # Translations
     system_locale = QLocale.system().name()
     QLocale.setDefault(QLocale(system_locale))
-    # qt_translator = QTranslator()
-    # qt_translation_path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
-    # if qt_translator.load(f"qtbase_{system_locale}", qt_translation_path):
-    #     app.installTranslator(qt_translator)
+    qt_translator = QTranslator()
+    qt_translation_path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
+    if qt_translator.load(f"qtbase_{system_locale}", qt_translation_path):
+        app.installTranslator(qt_translator)
 
     MainWindow()
     sys.exit(app.exec())

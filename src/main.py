@@ -305,23 +305,24 @@ QPushButton#button_search:pressed {
     background: #64A045;
 }
 
-QHeaderView::section {
-    color: #000000;
-    text-align: center;
-    padding: 0;
-}
-
 #label_result {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
 
 #table_result {
+    background: #ffffff;
+    color: #000000;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border: 5px solid #5a9bd5;
-    color: #000000;
     text-align: left;
+    gridline-color: black;
+}
+
+QHeaderView::section {
+    background: #ffffff;
+    color: #000000;
 }
 """
 

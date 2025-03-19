@@ -44,6 +44,7 @@ class SQLite3DB:
                 join ligands l on (r.id=receptor_id)
                 join compounds c on (l.compound_id=c.id)
             WHERE r.name='{receptor}' OR r.display_name='{receptor}'
+            ORDER BY c.id ASC, c.name ASC
         """)
         return self.cursor.fetchall()
 
@@ -52,6 +53,7 @@ class SQLite3DB:
             SELECT DISTINCT c.id, c.name
             FROM compounds c
             WHERE c.name='{compound}'
+            ORDER BY c.id ASC, c.name ASC
         """)
         return self.cursor.fetchall()
 
@@ -62,6 +64,7 @@ class SQLite3DB:
                 join ligands l on (c.id=l.compound_id)
                 join receptors r on (l.receptor_id=r.id)
             WHERE c.name='{compound}' AND c.id='{compound_id}'
+            ORDER BY r.name ASC
         """)
         return self.cursor.fetchall()
 

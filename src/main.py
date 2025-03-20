@@ -326,7 +326,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.model = TableModel()
+        # self.model = TableModel()
         self.init_ui()
 
     def init_ui(self):
@@ -362,12 +362,13 @@ class MainWindow(QMainWindow):
 
         self.table_result = QTableView(self.central_widget)
         self.table_result.setObjectName('table_result')
+        self.table_result.setModel(TableModel())
 
         # Button to export found data
         self.button_export = QPushButton(self.central_widget)
         self.button_export.setObjectName('button_export')
         self.button_export.setText("Экспорт в csv")
-        self.button_export.clicked.connect(lambda x: self.model.to_csv())
+        self.button_export.clicked.connect(lambda x: self.table_result.model().to_csv())
 
         # Button to update database
         self.button_update_db = QPushButton(self.central_widget)
@@ -397,19 +398,33 @@ class MainWindow(QMainWindow):
         self.show()
 
     def search(self):
-        self.model = TableModel()
-        self.table_result.setModel(self.model)
+        self.update_table()
 
         db = DB.SQLite3DB(DB_FILE_PATH)
+        prompt = self.edit_prompt.text()
+        model = TableModel()
 
-        name = self.edit_prompt.text()
+        if (receptors := self.search_receptors(db, prompt)):
+            model = receptors
+        elif (compounds := self.search_compounds(db, prompt)):
+            model = compounds
+        else:
+            self.show_not_found()
 
+        self.update_table(model)
+
+    def update_table(self, model=TableModel()):
+        self.table_result.setModel(model)
+        self.table_result.resizeColumnsToContents()
+        self.table_result.resizeRowsToContents()
+
+    def search_receptors(self, db, compound_name):
         # Get compounds with same name, but distinct id
-        compounds = db.get_compounds_by_name(name)
+        compounds = db.get_compounds_by_name(compound_name)
         if compounds:
             # Select one of the compunds
             dialog = SelectDialog(
-                title=name,
+                title=compound_name,
                 text='Выберите Bitter ID',
                 options=(c[0] for c in compounds),
                 parent=self,
@@ -417,17 +432,19 @@ class MainWindow(QMainWindow):
             if dialog.exec() == QDialog.Accepted:
                 bitter_id = dialog.get_selected()
                 # Get receptors that sensed selected compound
-                data = db.get_receptors_by_compound(name, bitter_id)
-                self.model = ReceptorModel(data, metadata={'Bitter ID': bitter_id})
-        # Get compounds sensed by receptor
-        elif (data := db.get_compounds_by_receptor(name)):
-            self.model = CompoundModel(data, metadata={'Receptor': name})
-        else:
-            self.show_not_found()
+                data = db.get_receptors_by_compound(compound_name, bitter_id)
+                if data:
+                    return ReceptorModel(data, metadata={'Bitter ID': bitter_id})
+            else:
+                return ReceptorModel()
+        return None
 
-        self.table_result.setModel(self.model)
-        self.table_result.resizeColumnsToContents()
-        self.table_result.resizeRowsToContents()
+    def search_compounds(self, db, receptor_name):
+        # Get compounds sensed by receptor
+        data = db.get_compounds_by_receptor(receptor_name)
+        if data:
+            return CompoundModel(data, metadata={'Receptor': receptor_name})
+        return None
 
     def show_not_found(self):
         msg = QMessageBox(self)

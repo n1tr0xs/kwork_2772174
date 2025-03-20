@@ -126,37 +126,37 @@ class ReceptorModel(TableModel):
 
 class SelectDialog(QDialog):
     CSS = """
-* {
-    color: #ffffff;
-    font-family: Arial;
-    font-size: 16px;
-}
+        * {
+            color: #ffffff;
+            font-family: Arial;
+            font-size: 16px;
+        }
 
-QDialog {
-    background: #000000;
-}
+        QDialog {
+            background: #000000;
+        }
 
-QPushButton,
-QComboBox,
-QComboBox QAbstractItemView {
-    font-size: 14px;
-    border-radius: 5px;
-    background: #69B0E4;
-    padding: 5px;
-}
+        QPushButton,
+        QComboBox,
+        QComboBox QAbstractItemView {
+            font-size: 14px;
+            border-radius: 5px;
+            background: #69B0E4;
+            padding: 5px;
+        }
 
-QAbstractItemView::item:hover {
-    background-color: #4B91CD;
-    border: 0;
-}
+        QAbstractItemView::item:hover {
+            background-color: #4B91CD;
+            border: 0;
+        }
 
-QPushButton:hover {
-    background: #8CB9E1;
-}
-QPushButton:pressed {
-    background: #4B91CD;
-}
-"""
+        QPushButton:hover {
+            background: #8CB9E1;
+        }
+        QPushButton:pressed {
+            background: #4B91CD;
+        }
+    """
 
     def __init__(self, title='Выбор', text='', options=None, parent=None):
         super().__init__(parent=parent)
@@ -189,47 +189,47 @@ QPushButton:pressed {
 
 class ConfirmDialog(QMessageBox):
     CSS = """
-* {
-    color: #ffffff;
-    border-radius: 10px;
-    font-family: Arial;
-    font-size: 16px;
-}
+        * {
+            color: #ffffff;
+            border-radius: 10px;
+            font-family: Arial;
+            font-size: 16px;
+        }
 
-QMessageBox {
-    background: #000000;
-}
+        QMessageBox {
+            background: #000000;
+        }
 
-QPushButton {
-    width: 45px;
-    height: 32px;
-}
-"""
+        QPushButton {
+            width: 45px;
+            height: 32px;
+        }
+    """
     BUTTON_YES_CSS = """
-QPushButton {
-    background: #70ad46;
-}
+        QPushButton {
+            background: #70ad46;
+        }
 
-QPushButton:hover {
-    background-color: #96C87D;
-}
+        QPushButton:hover {
+            background-color: #96C87D;
+        }
 
-QPushButton:pressed {
-    background-color: #64A045;
-}
-"""
+        QPushButton:pressed {
+            background-color: #64A045;
+        }
+    """
     BUTTON_NO_CSS = """
-QPushButton {
-    background: #ff0000;
-}
+        QPushButton {
+            background: #ff0000;
+        }
 
-QPushButton:hover {
-    background-color: #e74c3c;
-}
-QPushButton:pressed {
-    background-color: #a93226;
-}
-"""
+        QPushButton:hover {
+            background-color: #e74c3c;
+        }
+        QPushButton:pressed {
+            background-color: #a93226;
+        }
+    """
 
     def __init__(self, title, text, parent=None):
         super().__init__(
@@ -251,78 +251,78 @@ QPushButton:pressed {
 
 class MainWindow(QMainWindow):
     CSS = """
-* {
-    color: #ffffff;
-    border-radius: 10px;
-    font-family: Arial;
-    font-size: 20px;
-}
+        * {
+            color: #ffffff;
+            border-radius: 10px;
+            font-family: Arial;
+            font-size: 20px;
+        }
 
-QMenu {
-    background-color: #000000;
-}
+        QMenu {
+            background-color: #000000;
+        }
 
-QMenu:item:selected {
-    background-color: #8CB9E1;
-}
+        QMenu:item:selected {
+            background-color: #8CB9E1;
+        }
 
-MainWindow {
-    background: #000000;
-}
+        MainWindow {
+            background: #000000;
+        }
 
-#edit_prompt {
-    padding: 5px;
-}
+        #edit_prompt {
+            padding: 5px;
+        }
 
-#edit_prompt,
-QPushButton#button_export,
-QPushButton#button_update_db,
-#label_result {
-    background: #5a9bd5;
-}
+        #edit_prompt,
+        QPushButton#button_export,
+        QPushButton#button_update_db,
+        #label_result {
+            background: #5a9bd5;
+        }
 
-QPushButton#button_export:hover,
-QPushButton#button_update_db:hover {
-    background: #8CB9E1;
-}
+        QPushButton#button_export:hover,
+        QPushButton#button_update_db:hover {
+            background: #8CB9E1;
+        }
 
-QPushButton#button_export:pressed,
-QPushButton#button_update_db:pressed {
-    background: #4B91CD;
-}
+        QPushButton#button_export:pressed,
+        QPushButton#button_update_db:pressed {
+            background: #4B91CD;
+        }
 
-QPushButton#button_search {
-    background: #70ad46;
-}
+        QPushButton#button_search {
+            background: #70ad46;
+        }
 
-QPushButton#button_search:hover {
-    background: #96C87D;
-}
+        QPushButton#button_search:hover {
+            background: #96C87D;
+        }
 
-QPushButton#button_search:pressed {
-    background: #64A045;
-}
+        QPushButton#button_search:pressed {
+            background: #64A045;
+        }
 
-#label_result {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
+        #label_result {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
 
-#table_result {
-    background: #ffffff;
-    color: #000000;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border: 5px solid #5a9bd5;
-    text-align: left;
-    gridline-color: black;
-}
+        #table_result {
+            background: #ffffff;
+            color: #000000;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            border: 5px solid #5a9bd5;
+            text-align: left;
+            gridline-color: black;
+        }
 
-QHeaderView::section {
-    background: #ffffff;
-    color: #000000;
-}
-"""
+        QHeaderView::section {
+            background: #ffffff;
+            color: #000000;
+        }
+    """
 
     def __init__(self):
         super().__init__()
@@ -433,29 +433,29 @@ QHeaderView::section {
         msg.setText("В базе данных не обнаружено")
         msg.setStandardButtons(QMessageBox.Ok)
         msg.setStyleSheet("""
-* {
-    color: #ffffff;
-    border-radius: 10px;
-    font-family: Arial;
-    font-size: 16px;
-}
+            * {
+                color: #ffffff;
+                border-radius: 10px;
+                font-family: Arial;
+                font-size: 16px;
+            }
 
-QMessageBox {
-    background: #000000;
-}
+            QMessageBox {
+                background: #000000;
+            }
 
-QPushButton {
-    background: #5a9bd5;
-    width: 45px;
-    height: 32px;
-}
-QPushButton:hover {
-    background: #8CB9E1;
-}
-QPushButton:pressed {
-    background: #4B91CD;
-}
-""")
+            QPushButton {
+                background: #5a9bd5;
+                width: 45px;
+                height: 32px;
+            }
+            QPushButton:hover {
+                background: #8CB9E1;
+            }
+            QPushButton:pressed {
+                background: #4B91CD;
+            }
+        """)
         msg.exec()
 
     def update_db(self):

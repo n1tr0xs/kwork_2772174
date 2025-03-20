@@ -397,6 +397,9 @@ class MainWindow(QMainWindow):
         self.show()
 
     def search(self):
+        self.model = TableModel()
+        self.table_result.setModel(self.model)
+
         db = DB.SQLite3DB(DB_FILE_PATH)
 
         name = self.edit_prompt.text()

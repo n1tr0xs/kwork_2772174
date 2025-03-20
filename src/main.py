@@ -434,7 +434,7 @@ class MainWindow(QMainWindow):
                 # Get receptors that sensed selected compound
                 data = db.get_receptors_by_compound(compound_name, bitter_id)
                 if data:
-                    return ReceptorModel(data, metadata={'Bitter ID': bitter_id})
+                    return ReceptorModel(data, metadata={'Bitter ID': bitter_id, 'Название вещества': compound_name})
             else:
                 return ReceptorModel()
         return None

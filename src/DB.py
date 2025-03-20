@@ -43,7 +43,7 @@ class SQLite3DB:
             FROM receptors r
                 join ligands l on (r.id=receptor_id)
                 join compounds c on (l.compound_id=c.id)
-            WHERE r.name='{receptor}' OR r.display_name='{receptor}'
+            WHERE LOWER(r.name)='{receptor.lower()}' OR LOWER(r.display_name)='{receptor.lower()}'
             ORDER BY c.id ASC, c.name ASC
         """)
         return self.cursor.fetchall()
@@ -63,7 +63,7 @@ class SQLite3DB:
             FROM compounds c
                 join ligands l on (c.id=l.compound_id)
                 join receptors r on (l.receptor_id=r.id)
-            WHERE c.name='{compound}' AND c.id='{compound_id}'
+            WHERE LOWER(c.name)='{compound.lower()}' AND c.id='{compound_id}'
             ORDER BY r.name ASC
         """)
         return self.cursor.fetchall()

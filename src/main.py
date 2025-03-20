@@ -413,14 +413,47 @@ QHeaderView::section {
                 # Get receptors that sensed selected compound
                 data = db.get_receptors_by_compound(name, bitter_id)
                 self.model = ReceptorModel(data, metadata={'Bitter ID': bitter_id})
-        else:
-            # Get compounds sensed by receptor
-            data = db.get_compounds_by_receptor(name)
+        # Get compounds sensed by receptor
+        elif (data := db.get_compounds_by_receptor(name)):
             self.model = CompoundModel(data, metadata={'Receptor': name})
+        else:
+            self.show_not_found()
 
         self.table_result.setModel(self.model)
         self.table_result.resizeColumnsToContents()
         self.table_result.resizeRowsToContents()
+
+    def show_not_found(self):
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle("Ошибка")
+        msg.setText("В базе данных не обнаружено")
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setStyleSheet("""
+* {
+    color: #ffffff;
+    border-radius: 10px;
+    font-family: Arial;
+    font-size: 16px;
+}
+
+QMessageBox {
+    background: #000000;
+}
+
+QPushButton {
+    background: #5a9bd5;
+    width: 45px;
+    height: 32px;
+}
+QPushButton:hover {
+    background: #8CB9E1;
+}
+QPushButton:pressed {
+    background: #4B91CD;
+}
+""")
+        msg.exec()
 
     def update_db(self):
         dialog = ConfirmDialog(

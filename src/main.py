@@ -51,15 +51,47 @@ def create_folder(path: str):
         print(f'Error: {e}')
 
 
-class TableModel(QAbstractTableModel):
-    model_name = None
-    headers = []
+class WarningBox(QMessageBox):
+    def __init__(self, title, text, parent=None):
+        super().__init__(parent=parent)
+        self.setIcon(QMessageBox.Warning)
+        self.setWindowTitle(title)
+        self.setText(text)
+        self.setStandardButtons(QMessageBox.Ok)
 
-    def __init__(self, data=None, metadata=None):
+        self.setStyleSheet("""
+            * {
+                color: #ffffff;
+                border-radius: 10px;
+                font-family: Arial;
+                font-size: 16px;
+            }
+
+            QMessageBox {
+                background: #000000;
+            }
+
+            QPushButton {
+                background: #5a9bd5;
+                width: 45px;
+                height: 32px;
+            }
+            QPushButton:hover {
+                background: #8CB9E1;
+            }
+            QPushButton:pressed {
+                background: #4B91CD;
+            }
+        """)
+
+
+class TableModel(QAbstractTableModel):
+    def __init__(self, data=None, headers=None, metadata=None):
         super().__init__()
         self.data_list = data or []
+        self.headers = [] or headers
         self.metadata = {
-            'Время и дата запроса': datetime.strftime(datetime.now(), "%d %m %y %H %M %S"),
+            'Время и дата запроса': datetime.strftime(datetime.now(), "%d.%m.%y %H:%M:%S"),
         }
         if metadata:
             self.metadata.update(metadata)
@@ -90,7 +122,7 @@ class TableModel(QAbstractTableModel):
         self.endInsertRows()
 
     def get_file_name(self):
-        return datetime.strftime(datetime.now(), "%d %m %y %H %M %S")
+        return datetime.strftime(datetime.now(), "%d.%m.%y %H %M %S")
 
     def to_csv(self):
         create_folder(EXPORT_FOLDER)
@@ -106,22 +138,6 @@ class TableModel(QAbstractTableModel):
             writer.writerow(self.headers)
             for row in self.data_list:
                 writer.writerow(row)
-
-
-class CompoundModel(TableModel):
-    model_name = 'compound'
-    headers = ['Bitter ID', "Название вещества"]
-
-    def __init__(self, data=None, metadata=None):
-        super().__init__(data=data, metadata=metadata)
-
-
-class ReceptorModel(TableModel):
-    model_name = 'receptor'
-    headers = ['Название рецептора']
-
-    def __init__(self, data=None, metadata=None):
-        super().__init__(data=data, metadata=metadata)
 
 
 class SelectDialog(QDialog):
@@ -326,11 +342,11 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        # self.model = TableModel()
+        self.settings = QSettings('n1tr0xs', WINDOW_TITLE)
+        self.db = DB.SQLite3DB(DB_FILE_PATH)
         self.init_ui()
 
     def init_ui(self):
-        self.settings = QSettings('n1tr0xs', WINDOW_TITLE)
         self.setWindowTitle(WINDOW_TITLE)
         self.setWindowIcon(QIcon("icon.ico"))
         self.setStyleSheet(self.CSS)
@@ -398,87 +414,86 @@ class MainWindow(QMainWindow):
         self.show()
 
     def search(self):
+        '''
+        Handles search and "Not found" dialog.
+        '''
+        prompt = self.edit_prompt.text()
+        if not prompt:
+            return
+
         self.update_table()
 
-        db = DB.SQLite3DB(DB_FILE_PATH)
-        prompt = self.edit_prompt.text()
-        model = TableModel()
-
-        if (receptors := self.search_receptors(db, prompt)):
-            model = receptors
-        elif (compounds := self.search_compounds(db, prompt)):
-            model = compounds
+        if (model := self.search_database(prompt)):
+            self.update_table(model)
         else:
-            self.show_not_found()
+            WarningBox(
+                'Ошибка',
+                'В базе данных не обнаружено',
+                parent=self
+            ).exec()
 
-        self.update_table(model)
+    def search_database(self, prompt):
+        '''
+        Searches prompt in DB.
+        '''
+        if (receptors := self.search_receptors(prompt)):
+            return receptors
+        elif (compounds := self.search_compounds(prompt)):
+            return compounds
 
     def update_table(self, model=TableModel()):
         self.table_result.setModel(model)
         self.table_result.resizeColumnsToContents()
         self.table_result.resizeRowsToContents()
 
-    def search_receptors(self, db, compound_name):
+    def search_receptors(self, compound_name):
+        '''
+        Searches receptors that can sense `compound_name`.
+        '''
         # Get compounds with same name, but distinct id
-        compounds = db.get_compounds_by_name(compound_name)
-        if compounds:
-            # Select one of the compunds
-            dialog = SelectDialog(
-                title=compound_name,
-                text='Выберите Bitter ID',
-                options=(c[0] for c in compounds),
-                parent=self,
-            )
-            if dialog.exec() == QDialog.Accepted:
-                bitter_id = dialog.get_selected()
-                # Get receptors that sensed selected compound
-                data = db.get_receptors_by_compound(compound_name, bitter_id)
-                if data:
-                    return ReceptorModel(data, metadata={'Bitter ID': bitter_id, 'Название вещества': compound_name})
-            else:
-                return ReceptorModel()
-        return None
+        compounds = self.db.get_compounds_by_name(compound_name)
+        if not compounds:
+            return None
 
-    def search_compounds(self, db, receptor_name):
-        # Get compounds sensed by receptor
-        data = db.get_compounds_by_receptor(receptor_name)
-        if data:
-            return CompoundModel(data, metadata={'Receptor': receptor_name})
-        return None
+        # Select one of the compunds
+        dialog = SelectDialog(
+            title=compound_name,
+            text='Выберите Bitter ID',
+            options=(c[0] for c in compounds),
+            parent=self,
+        )
+        if dialog.exec() == QDialog.Rejected:
+            return TableModel()
 
-    def show_not_found(self):
-        msg = QMessageBox(self)
-        msg.setIcon(QMessageBox.Warning)
-        msg.setWindowTitle("Ошибка")
-        msg.setText("В базе данных не обнаружено")
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.setStyleSheet("""
-            * {
-                color: #ffffff;
-                border-radius: 10px;
-                font-family: Arial;
-                font-size: 16px;
-            }
+        bitter_id = dialog.get_selected()
+        data = self.db.get_receptors_by_compound(compound_name, bitter_id)
+        if not data:
+            return None
 
-            QMessageBox {
-                background: #000000;
-            }
+        return TableModel(
+            data,
+            headers=['Название рецептора'],
+            metadata={'Bitter ID': bitter_id, 'Название вещества': compound_name},
+        )
 
-            QPushButton {
-                background: #5a9bd5;
-                width: 45px;
-                height: 32px;
-            }
-            QPushButton:hover {
-                background: #8CB9E1;
-            }
-            QPushButton:pressed {
-                background: #4B91CD;
-            }
-        """)
-        msg.exec()
+    def search_compounds(self, receptor_name):
+        '''
+        Gets compounds that can be sensed by receptor.
+        '''
+        data = self.db.get_compounds_by_receptor(receptor_name)
+        if not data:
+            return None
+
+        return TableModel(
+            data,
+            headers=['Bitter ID', "Название вещества"],
+            metadata={'Receptor': receptor_name},
+        )
 
     def update_db(self):
+        '''
+        Updates database.
+        '''
         dialog = ConfirmDialog(
             'Подтверждение',
             "Обновление базы данных полностью пересоздаст её из csv файлов, указанных в файле settings.ini.",

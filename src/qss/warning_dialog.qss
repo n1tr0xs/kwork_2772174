@@ -1,0 +1,24 @@
+* {
+    color: #ffffff;
+    border-radius: 10px;
+    font-family: Arial;
+    font-size: 16px; 
+}
+
+QMessageBox {
+    background: #000000;
+}
+
+QPushButton {
+    background: #5a9bd5;
+    width: 45px;
+    height: 32px; 
+}
+
+QPushButton: hover {
+    background:  #8CB9E1;
+}
+
+QPushButton: pressed {
+    background:  #4B91CD;
+}

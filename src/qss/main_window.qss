@@ -1,0 +1,71 @@
+* {
+    color: #ffffff;
+    border-radius: 10px;
+    font-family: Arial;
+    font-size: 20px;
+}
+
+QMenu {
+    background-color: #000000;
+}
+
+QMenu:item:selected {
+    background-color: #8CB9E1;
+}
+
+MainWindow {
+    background: #000000;
+}
+
+#edit_prompt {
+    padding: 5px;
+}
+
+#edit_prompt,
+QPushButton#button_export,
+QPushButton#button_update_db,
+#label_result {
+    background: #5a9bd5;
+}
+
+QPushButton#button_export:hover,
+QPushButton#button_update_db:hover {
+    background: #8CB9E1;
+}
+
+QPushButton#button_export:pressed,
+QPushButton#button_update_db:pressed {
+    background: #4B91CD;
+}
+
+QPushButton#button_search {
+    background: #70ad46;
+}
+
+QPushButton#button_search:hover {
+    background: #96C87D;
+}
+
+QPushButton#button_search:pressed {
+    background: #64A045;
+}
+
+#label_result {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+#table_result {
+    background: #ffffff;
+    color: #000000;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border: 5px solid #5a9bd5;
+    text-align: left;
+    gridline-color: black;
+}
+
+QHeaderView::section {
+    background: #ffffff;
+    color: #000000;
+}

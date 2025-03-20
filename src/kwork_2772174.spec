@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('settings.ini', '.'), ('data.db', '.'), ('background.png', '.'), ('icon.ico', '.')],
+    datas=[('settings.ini', '.'), ('data.db', '.'), ('background.png', '.'), ('icon.ico', '.'), ('..\\Readme.md', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

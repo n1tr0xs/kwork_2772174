@@ -158,12 +158,11 @@ QPushButton:pressed {
 }
 """
 
-    def __init__(self, title='Выбор', text='', options=None):
-        super().__init__()
+    def __init__(self, title='Выбор', text='', options=None, parent=None):
+        super().__init__(parent=parent)
         options = options or []
         self.setWindowTitle(title)
         self.setStyleSheet(self.CSS)
-        self.setWindowIcon(QIcon("icon.ico"))
 
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -248,7 +247,6 @@ QPushButton:pressed {
         no_button.setStyleSheet(self.BUTTON_NO_CSS)
 
         self.setDefaultButton(no_button)
-        self.setWindowIcon(QIcon("icon.ico"))
 
 
 class MainWindow(QMainWindow):
@@ -407,7 +405,12 @@ QHeaderView::section {
         compounds = db.get_compounds_by_name(name)
         if compounds:
             # Select one of the compunds
-            dialog = SelectDialog(title=name, text='Выберите Bitter ID', options=(c[0] for c in compounds))
+            dialog = SelectDialog(
+                title=name,
+                text='Выберите Bitter ID',
+                options=(c[0] for c in compounds),
+                parent=self,
+            )
             if dialog.exec() == QDialog.Accepted:
                 bitter_id = dialog.get_selected()
                 # Get receptors that sensed selected compound
@@ -458,7 +461,8 @@ QPushButton:pressed {
     def update_db(self):
         dialog = ConfirmDialog(
             'Подтверждение',
-            "Обновление базы данных полностью пересоздаст её из csv файлов, указанных в файле settings.ini."
+            "Обновление базы данных полностью пересоздаст её из csv файлов, указанных в файле settings.ini.",
+            parent=self,
         )
 
         if dialog.exec() == QMessageBox.Yes:
